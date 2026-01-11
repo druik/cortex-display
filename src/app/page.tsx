@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 type CapacityState = 'low' | 'moderate' | 'high' | 'rest'
 
 interface Task {
