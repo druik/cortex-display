@@ -81,31 +81,16 @@ export default function CortexDisplay() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-white/40">Loading</p>
+      <main className="min-h-screen flex items-center justify-center bg-black">
+        <p className="text-white/40 text-4xl">Loading</p>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen flex flex-col justify-center px-12 py-16 max-w-2xl mx-auto">
-      <p className="text-7xl font-light tracking-tight text-white mb-16">
+    <main className="min-h-screen flex flex-col justify-center px-16 py-20 bg-black">
+      <p className="text-[12vw] font-extralight tracking-tight text-white leading-none mb-12">
         {formatTime(currentTime)}
       </p>
 
-      <p className="text-2xl text-white/50 mb-12">
-        {formatCapacity(capacity)}
-      </p>
-
-      {visibleTasks.length > 0 && (
-        <ul className="space-y-4">
-          {visibleTasks.map((task) => (
-            <li key={task.id} className="text-2xl text-white/80">
-              {task.title}
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  )
-}
+      <p className="text-[4vw] text-
