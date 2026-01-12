@@ -233,4 +233,9 @@ export default function CortexDisplay() {
       {/* Pin Toast */}
       {toast && (
         <div className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur px-8 py-4 rounded-full">
-          <span className="text-white/70 text
+          <span className="text-white/70 text-xl">{toast}</span>
+        </div>
+      )}
+    </main>
+  )
+}
