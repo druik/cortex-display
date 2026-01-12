@@ -12,10 +12,10 @@ interface Task {
 }
 
 const TASK_LIMITS: Record<CapacityState, number> = {
-  low: 1,
-  moderate: 2,
-  high: 3,
-  rest: 0,
+  low: 3,
+  moderate: 5,
+  high: 7,
+  rest: 1,
 }
 
 function formatTime(date: Date): string {
