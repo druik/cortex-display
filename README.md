@@ -1,37 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cortex
 
-## Getting Started
+A read-only ambient display that shows what matters right now, filtered by your current capacity.
 
-First, run the development server:
+## What it does
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Cortex displays a minimal view of your reality: the time, your current focus mode, and a handful of tasks appropriate to your energy level. Nothing else.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Low** — One task. Anchors only.
+- **Moderate** — Two tasks. Contained scope.
+- **High** — Three tasks. Still capped.
+- **Rest** — No tasks. Time only.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What it doesn't do
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Cortex is not a task manager, productivity tracker, or planning tool. It doesn't create urgency, count overdue items, or judge your output. It consumes data from your existing systems and displays a humane slice of it.
 
-## Learn More
+## Why
 
-To learn more about Next.js, take a look at the following resources:
+Modern knowledge work generates more inputs than any person can process. Every app demands attention. Every notification competes for your focus.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Cortex inverts this. Instead of pulling you toward your tools, it projects a calm, glanceable summary onto a passive display — a monitor, a TV, a tablet on your desk. You check in when you're ready. It doesn't interrupt.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How it works
 
-## Deploy on Vercel
+- **Display**: Next.js app deployed to Vercel
+- **Data**: Supabase (Postgres)
+- **Capacity control**: iOS Shortcut calls a simple API
+- **Task source**: Manual entry or sync from Reminders (roadmap)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Clone this repo
+2. Create a Supabase project
+3. Run the schema (see `/docs/schema.sql`)
+4. Deploy to Vercel
+5. Set environment variables
+6. Create iOS Shortcut to set capacity
 
+## Roadmap
+
+- [ ] Apple Reminders sync
+- [ ] Google Calendar integration (next event)
+- [ ] Apple TV native app
+- [ ] Widgets for iOS/macOS
+
+## License
+
+MIT
