@@ -9,6 +9,27 @@ const supabase = createClient(
 const USER_ID = '195145f9-d059-4a71-8722-fa61ecc91ff3'
 const PROVIDER = 'apple_shortcuts'
 
+interface NormalizedEvent {
+  title: string
+  start_at: string
+}
+
+function normalizeEvents(body: unknown): NormalizedEvent[] | null {
+  if (Array.isArray(body)) {
+    return body.map((e) => ({
+      title: e.title || e.Title || '',
+      start_at: e.start_at || e['Start Date'] || ''
+    }))
+  }
+  if (body && typeof body === 'object' && 'events' in body && Array.isArray((body as { events: unknown[] }).events)) {
+    return (body as { events: Array<{ title?: string; start_at?: string }> }).events.map((e) => ({
+      title: e.title || '',
+      start_at: e.start_at || ''
+    }))
+  }
+  return null
+}
+
 export async function POST(request: NextRequest) {
   try {
     const apiKey = request.headers.get('x-api-key')
@@ -16,8 +37,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { events } = await request.json()
-    if (!Array.isArray(events)) {
+    const body = await request.json()
+    const events = normalizeEvents(body)
+    if (!events) {
       return NextResponse.json({ error: 'events array required' }, { status: 400 })
     }
 
@@ -35,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ synced: 0 })
     }
 
-    const rows = events.map((e: { title: string; start_at: string }) => ({
+    const rows = events.map((e) => ({
       user_id: USER_ID,
       provider: PROVIDER,
       title: e.title,
