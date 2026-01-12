@@ -142,7 +142,7 @@ export default function CortexDisplay() {
       <p className="text-[3vw] text-white/50 mb-12">
         {formatDate(currentTime)}
       </p>
-      <p className="text-[4vw] text-white/40 mb-16">{formatCapacity(capacity)}</p>
+      <p className="text-[2vw] text-white/30 mb-16">{formatCapacity(capacity)}</p>
       
       {visibleTasks.length > 0 && (
         <ul className="space-y-6">
