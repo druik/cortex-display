@@ -8,12 +8,34 @@ const supabase = createClient(
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { id } = await request.json()
+    const { id, action } = await request.json()
     
     if (!id) {
       return NextResponse.json({ error: 'Task ID required' }, { status: 400 })
     }
 
+    if (action === 'toggle_anchor') {
+      // Get current anchor status
+      const { data: task } = await supabase
+        .from('tasks')
+        .select('is_anchor')
+        .eq('id', id)
+        .single()
+      
+      // Toggle it
+      const { error } = await supabase
+        .from('tasks')
+        .update({ is_anchor: !task?.is_anchor })
+        .eq('id', id)
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, is_anchor: !task?.is_anchor })
+    }
+
+    // Default: complete task
     const { error } = await supabase
       .from('tasks')
       .update({ completed: true, completed_at: new Date().toISOString() })
