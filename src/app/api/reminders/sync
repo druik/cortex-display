@@ -1,0 +1,61 @@
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+)
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify token
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    
+    if (token !== process.env.CORTEX_SYNC_TOKEN) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { device_id, list, reminders } = await request.json()
+
+    if (!reminders || !Array.isArray(reminders)) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    }
+
+    let synced = 0
+    
+    for (const reminder of reminders) {
+      // Create external_id fallback if not provided
+      const external_id = reminder.external_id || 
+        `${reminder.title}-${reminder.due_at || 'no-due'}`
+
+      const { error } = await supabase
+        .from('reminders')
+        .upsert({
+          external_id,
+          device_id: device_id || 'default',
+          list_name: list || 'Cortex',
+          title: reminder.title,
+          notes: reminder.notes || null,
+          due_at: reminder.due_at || null,
+          completed: reminder.completed || false,
+          completed_at: reminder.completed_at || null,
+          priority: reminder.priority || 0,
+          last_seen_at: new Date().toISOString(),
+        }, {
+          onConflict: 'external_id,device_id'
+        })
+
+      if (!error) synced++
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      synced,
+      total: reminders.length 
+    })
+
+  } catch (err) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+}
