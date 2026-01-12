@@ -48,9 +48,10 @@ export default function CortexDisplay() {
     }
 
     const { data: tasksData } = await supabase
-      .from('tasks')
-      .select('id, title, due_date')
-      .order('due_date', { ascending: true, nullsFirst: false })
+  .from('tasks')
+  .select('id, title, due_date')
+  .eq('completed', false)
+  .order('due_date', { ascending: true, nullsFirst: false })
 
     if (tasksData) {
       setTasks(tasksData)
