@@ -12,6 +12,12 @@ interface Task {
   is_anchor: boolean
 }
 
+interface CalendarEvent {
+  title: string
+  start_at: string
+  provider: string
+}
+
 const TASK_LIMITS: Record<CapacityState, number> = {
   low: 3,
   moderate: 5,
@@ -39,10 +45,29 @@ function formatCapacity(state: CapacityState): string {
   return state.charAt(0).toUpperCase() + state.slice(1)
 }
 
+function formatEventTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
+function formatRelativeTime(eventDate: Date, now: Date): string {
+  const diffMs = eventDate.getTime() - now.getTime()
+  const diffMins = Math.round(diffMs / 60000)
+  if (diffMins < 1) return 'now'
+  if (diffMins < 60) return `in ${diffMins}m`
+  const hours = Math.floor(diffMins / 60)
+  const mins = diffMins % 60
+  return mins > 0 ? `in ${hours}h ${mins}m` : `in ${hours}h`
+}
+
 export default function CortexDisplay() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [capacity, setCapacity] = useState<CapacityState>('moderate')
   const [tasks, setTasks] = useState<Task[]>([])
+  const [nextEvent, setNextEvent] = useState<CalendarEvent | null>(null)
   const [loading, setLoading] = useState(true)
   const [undoTask, setUndoTask] = useState<Task | null>(null)
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -70,6 +95,10 @@ export default function CortexDisplay() {
     if (tasksData) {
       setTasks(tasksData)
     }
+
+    const eventRes = await fetch('/api/calendar/next')
+    const eventData = await eventRes.json()
+    setNextEvent(eventData.event || null)
 
     setLoading(false)
   }
@@ -176,7 +205,19 @@ export default function CortexDisplay() {
         {formatDate(currentTime)}
       </p>
       <p className="text-[2vw] text-white/30 mb-16">{formatCapacity(capacity)}</p>
-      
+
+      {/* Next Calendar Event */}
+      {nextEvent && (
+        <div className="mb-16">
+          <p className="text-[2.5vw] text-white/60">
+            {formatEventTime(new Date(nextEvent.start_at))}  {nextEvent.title}
+          </p>
+          <p className="text-[1.5vw] text-white/30 mt-2">
+            {formatRelativeTime(new Date(nextEvent.start_at), currentTime)}
+          </p>
+        </div>
+      )}
+
       {/* Anchored Tasks */}
       {anchors.length > 0 && (
         <ul className="space-y-6 mb-12">
