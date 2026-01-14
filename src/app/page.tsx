@@ -86,7 +86,7 @@ export default function CortexDisplay() {
       setCapacity(capacityData.state as CapacityState)
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
     const { data: tasksData } = await supabase
       .from('tasks')
       .select('id, title, due_date, is_anchor')
@@ -169,21 +169,19 @@ export default function CortexDisplay() {
   }
 
   useEffect(() => {
+    // Update clock every 30 seconds
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date())
-    }, 60000)
+    }, 30000)
 
-    return () => clearInterval(timeInterval)
-  }, [])
-
-  useEffect(() => {
+    // Fetch data on mount and every 30 seconds
     fetchData()
+    const dataInterval = setInterval(fetchData, 30000)
 
-    const dataInterval = setInterval(() => {
-      fetchData()
-    }, 60000)
-
-    return () => clearInterval(dataInterval)
+    return () => {
+      clearInterval(timeInterval)
+      clearInterval(dataInterval)
+    }
   }, [])
 
   const anchors = tasks.filter(t => t.is_anchor)
