@@ -86,10 +86,12 @@ export default function CortexDisplay() {
       setCapacity(capacityData.state as CapacityState)
     }
 
+    const today = new Date().toISOString().split('T')[0]
     const { data: tasksData } = await supabase
       .from('tasks')
       .select('id, title, due_date, is_anchor')
       .eq('completed', false)
+      .eq('approved_date', today)
       .order('due_date', { ascending: true, nullsFirst: false })
 
     if (tasksData) {
