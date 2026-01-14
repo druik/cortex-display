@@ -91,7 +91,7 @@ export default function CortexDisplay() {
       .from('tasks')
       .select('id, title, due_date, is_anchor')
       .eq('completed', false)
-      .eq('approved_date', today)
+      .lte('approved_date', today)
       .order('due_date', { ascending: true, nullsFirst: false })
 
     if (tasksData) {
@@ -208,11 +208,13 @@ export default function CortexDisplay() {
 
       {/* Next Calendar Event */}
       {nextEvent && (
-        <div className="mb-16">
-          <p className="text-[2.5vw] text-white/60">
-            {formatEventTime(new Date(nextEvent.start_at))}  {nextEvent.title}
+        <div className="mb-16 pl-6 border-l-2 border-sky-500/40">
+          <p className="text-[2.5vw] text-sky-100/80">
+            {formatEventTime(new Date(nextEvent.start_at))}
+            <span className="text-white/50 mx-3">·</span>
+            {nextEvent.title}
           </p>
-          <p className="text-[1.5vw] text-white/30 mt-2">
+          <p className="text-[1.8vw] text-sky-400/60 mt-2 font-medium">
             {formatRelativeTime(new Date(nextEvent.start_at), currentTime)}
           </p>
         </div>
