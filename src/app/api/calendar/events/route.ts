@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 )
 
-const USER_ID = '195145f9-d059-4a71-8722-fa61ecc91ff3'
+const USER_ID = '195145f9-d059-4a71-8722-fa61ecc911f3'
 const PROVIDER = 'apple_shortcuts'
 
 interface NormalizedEvent {
