@@ -9,12 +9,24 @@ const supabase = createClient(
 const USER_ID = '195145f9-d059-4a71-8722-fa61ecc911f3'
 
 export async function POST(request: NextRequest) {
+  console.log('=== CAPTURE DEBUG ===')
+  console.log('Headers:', Object.fromEntries(request.headers.entries()))
+
+  const rawBody = await request.text()
+  console.log('Raw body:', rawBody)
+
   const apiKey = request.headers.get('x-api-key')
   if (apiKey !== process.env.CORTEX_API_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json()
+  let body
+  try {
+    body = JSON.parse(rawBody)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON', received: rawBody }, { status: 400 })
+  }
+
   const title = body.title || body.Title || body.text || body.Text
 
   if (!title || typeof title !== 'string') {
