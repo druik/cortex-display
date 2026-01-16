@@ -110,14 +110,30 @@ export default function CortexDisplay() {
     const eventData = await eventRes.json()
     setNextEvent(eventData.event || null)
 
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const { data: completedData } = await supabase
+    const todayPacific = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
+    console.log('=== COMPLETED TODAY DEBUG ===')
+    console.log('Today (Pacific):', todayPacific)
+    console.log('Current time (ISO):', new Date().toISOString())
+
+    const { data: allCompleted } = await supabase
       .from('tasks')
-      .select('id, title')
+      .select('id, title, completed_at')
       .eq('completed', true)
-      .gte('completed_at', todayStart.toISOString())
       .order('completed_at', { ascending: false })
+      .limit(10)
+
+    console.log('All completed tasks (recent 10):', allCompleted)
+
+    const { data: completedData, error: completedError } = await supabase
+      .from('tasks')
+      .select('id, title, completed_at')
+      .eq('completed', true)
+      .gte('completed_at', `${todayPacific}T00:00:00`)
+      .order('completed_at', { ascending: false })
+
+    console.log('Query filter:', `completed_at >= ${todayPacific}T00:00:00`)
+    console.log('Completed query error:', completedError)
+    console.log('Completed tasks found:', completedData)
 
     if (completedData) {
       setCompletedToday(completedData)
