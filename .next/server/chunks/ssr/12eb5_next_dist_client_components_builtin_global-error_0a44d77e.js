@@ -1,0 +1,3 @@
+module.exports=[50316,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(49690);a.n(d("[project]/Projects/cortex-display/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},42712,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(49690);a.n(d("[project]/Projects/cortex-display/node_modules/next/dist/client/components/builtin/global-error.js"))},40672,a=>{"use strict";a.i(50316);var b=a.i(42712);a.n(b)}];
+
+//# sourceMappingURL=12eb5_next_dist_client_components_builtin_global-error_0a44d77e.js.map

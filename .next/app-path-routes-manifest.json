@@ -1,0 +1,11 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/calendar/events/route": "/api/calendar/events",
+  "/api/calendar/next/route": "/api/calendar/next",
+  "/api/capacity/route": "/api/capacity",
+  "/api/tasks/capture/route": "/api/tasks/capture",
+  "/api/tasks/route": "/api/tasks",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

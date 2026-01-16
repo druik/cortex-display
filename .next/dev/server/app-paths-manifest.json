@@ -1,0 +1,4 @@
+{
+  "/api/calendar/next/route": "app/api/calendar/next/route.js",
+  "/page": "app/page.js"
+}

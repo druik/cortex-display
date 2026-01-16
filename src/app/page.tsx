@@ -72,6 +72,7 @@ export default function CortexDisplay() {
   const [undoTask, setUndoTask] = useState<Task | null>(null)
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [toastExiting, setToastExiting] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
 
@@ -107,35 +108,48 @@ export default function CortexDisplay() {
 
   async function completeTask(task: Task) {
     if (isLongPress.current) return
-    
+
     setTasks(prev => prev.filter(t => t.id !== task.id))
     setUndoTask(task)
-    
+    setToastExiting(false)
+
     if (undoTimeout) clearTimeout(undoTimeout)
-    
+
     const timeout = setTimeout(async () => {
       await fetch('/api/tasks', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: task.id }),
       })
-      setUndoTask(null)
+      setToastExiting(true)
+      setTimeout(() => {
+        setUndoTask(null)
+        setToastExiting(false)
+      }, 200)
     }, 5000)
-    
+
     setUndoTimeout(timeout)
   }
 
-  function undoComplete() {
-    if (undoTask && undoTimeout) {
-      clearTimeout(undoTimeout)
-      setTasks(prev => [...prev, undoTask].sort((a, b) => {
-        if (!a.due_date) return 1
-        if (!b.due_date) return -1
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-      }))
-      setUndoTask(null)
-      setUndoTimeout(null)
-    }
+  async function undoComplete() {
+    if (!undoTask) return
+
+    if (undoTimeout) clearTimeout(undoTimeout)
+
+    setTasks(prev => [...prev, undoTask].sort((a, b) => {
+      if (!a.due_date) return 1
+      if (!b.due_date) return -1
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+    }))
+
+    await fetch('/api/tasks', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: undoTask.id, action: 'undo' }),
+    })
+
+    setUndoTask(null)
+    setUndoTimeout(null)
   }
 
   async function toggleAnchor(task: Task) {
@@ -262,14 +276,17 @@ export default function CortexDisplay() {
 
       {/* Undo Toast */}
       {undoTask && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur px-8 py-4 rounded-full flex items-center gap-6">
-          <span className="text-white/70 text-xl">Completed: {undoTask.title}</span>
-          <button
-            onClick={undoComplete}
-            className="text-white font-medium text-xl hover:text-white/70 transition-colors"
-          >
-            Undo
-          </button>
+        <div className={`fixed bottom-32 left-1/2 bg-white/10 backdrop-blur-md rounded-3xl overflow-hidden ${toastExiting ? 'toast-exit' : 'toast-enter'}`}>
+          <div className="px-16 py-8 flex items-center gap-12">
+            <span className="text-[4vw] text-white/70">{undoTask.title}</span>
+            <button
+              onClick={undoComplete}
+              className="text-[4vw] text-white/50 font-medium hover:text-white transition-colors px-8 py-4 -my-4 -mr-8 min-h-[80px] min-w-[120px]"
+            >
+              Undo
+            </button>
+          </div>
+          <div key={undoTask.id} className="h-2 bg-white/20 toast-progress" />
         </div>
       )}
 

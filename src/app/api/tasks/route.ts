@@ -15,14 +15,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'toggle_anchor') {
-      // Get current anchor status
       const { data: task } = await supabase
         .from('tasks')
         .select('is_anchor')
         .eq('id', id)
         .single()
-      
-      // Toggle it
+
       const { error } = await supabase
         .from('tasks')
         .update({ is_anchor: !task?.is_anchor })
@@ -33,6 +31,19 @@ export async function PATCH(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, is_anchor: !task?.is_anchor })
+    }
+
+    if (action === 'undo') {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: false, completed_at: null })
+        .eq('id', id)
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true })
     }
 
     // Default: complete task
