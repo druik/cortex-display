@@ -5,19 +5,25 @@ const ALLOWED_ORIGINS = [
   'https://prefrontal-swart.vercel.app',
 ]
 
-function isAllowedOrigin(origin: string | null): boolean {
+function isAllowedOrigin(origin: string | null, referer: string | null): boolean {
   if (!origin) return true
+
   if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true
-  return ALLOWED_ORIGINS.includes(origin)
+
+  if (ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) return true
+
+  if (referer) {
+    const refererOrigin = new URL(referer).origin
+    if (refererOrigin === origin) return true
+    if (ALLOWED_ORIGINS.some(allowed => refererOrigin.startsWith(allowed))) return true
+  }
+
+  return false
 }
 
 export function corsHeaders(origin: string | null): HeadersInit {
-  const allowedOrigin = isAllowedOrigin(origin)
-    ? (origin || '*')
-    : 'null'
-
   return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
     'Access-Control-Max-Age': '86400',
@@ -26,8 +32,9 @@ export function corsHeaders(origin: string | null): HeadersInit {
 
 export function handleCors(request: Request): NextResponse | null {
   const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
 
-  if (!isAllowedOrigin(origin)) {
+  if (!isAllowedOrigin(origin, referer)) {
     return NextResponse.json(
       { error: 'Forbidden' },
       { status: 403, headers: corsHeaders(origin) }
