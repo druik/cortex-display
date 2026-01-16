@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const title = body.title || body.Title
+  const title = body.title || body.Title || body.text || body.Text
 
   if (!title || typeof title !== 'string') {
     return NextResponse.json({ error: 'Title required' }, { status: 400 })
