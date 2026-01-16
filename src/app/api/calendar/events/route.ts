@@ -20,24 +20,38 @@ function isValidDate(str: string): boolean {
   return !isNaN(d.getTime())
 }
 
-function normalizeEvents(body: unknown): NormalizedEvent[] | null {
+interface ParsedBody {
+  events: NormalizedEvent[]
+  clear: boolean
+}
+
+function parseBody(body: unknown): ParsedBody | null {
   let raw: unknown[] | null = null
+  let clear = false
 
   if (Array.isArray(body)) {
     raw = body
-  } else if (body && typeof body === 'object' && 'events' in body && Array.isArray((body as { events: unknown[] }).events)) {
-    raw = (body as { events: unknown[] }).events
+  } else if (body && typeof body === 'object') {
+    const obj = body as Record<string, unknown>
+    if ('events' in obj && Array.isArray(obj.events)) {
+      raw = obj.events
+    }
+    if ('clear' in obj && obj.clear === true) {
+      clear = true
+    }
   }
 
   if (!raw) return null
 
-  return raw.map((e: unknown) => {
+  const events = raw.map((e: unknown) => {
     const evt = e as Record<string, unknown>
     return {
       title: String(evt.title || evt.Title || '').trim(),
       start_at: String(evt.start_at || evt['Start Date'] || '')
     }
   })
+
+  return { events, clear }
 }
 
 function validateEvents(events: NormalizedEvent[]): string | null {
@@ -81,11 +95,41 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const events = normalizeEvents(body)
-    if (!events) {
+    const parsed = parseBody(body)
+    if (!parsed) {
       return NextResponse.json(
         { error: 'Events array required' },
         { status: 400, headers: corsHeaders(origin) }
+      )
+    }
+
+    const { events, clear } = parsed
+
+    if (events.length === 0 && !clear) {
+      return NextResponse.json(
+        { error: 'Events array cannot be empty for sync. Use { clear: true, events: [] } to clear all events.' },
+        { status: 400, headers: corsHeaders(origin) }
+      )
+    }
+
+    if (clear && events.length === 0) {
+      const { error: deleteError } = await supabase
+        .from('calendar_events_cache')
+        .delete()
+        .eq('user_id', USER_ID)
+        .eq('provider', PROVIDER)
+
+      if (deleteError) {
+        console.error('Calendar events clear failed:', deleteError)
+        return NextResponse.json(
+          { error: 'Failed to clear events' },
+          { status: 500, headers: corsHeaders(origin) }
+        )
+      }
+
+      return NextResponse.json(
+        { cleared: true, synced: 0 },
+        { headers: { ...corsHeaders(origin), 'X-RateLimit-Remaining': String(remaining) } }
       )
     }
 
@@ -97,33 +141,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { error: deleteError } = await supabase
-      .from('calendar_events_cache')
-      .delete()
-      .eq('user_id', USER_ID)
-      .eq('provider', PROVIDER)
-
-    if (deleteError) {
-      console.error('Calendar events delete failed:', deleteError)
-      return NextResponse.json(
-        { error: 'Failed to sync events' },
-        { status: 500, headers: corsHeaders(origin) }
-      )
-    }
-
-    if (events.length === 0) {
-      return NextResponse.json(
-        { synced: 0 },
-        { headers: corsHeaders(origin) }
-      )
-    }
-
+    const syncTimestamp = new Date().toISOString()
     const rows = events.map((e) => ({
       user_id: USER_ID,
       provider: PROVIDER,
       title: e.title,
       start_at: e.start_at,
-      fetched_at: new Date().toISOString()
+      fetched_at: syncTimestamp
     }))
 
     const { error: insertError } = await supabase
@@ -136,6 +160,17 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to sync events' },
         { status: 500, headers: corsHeaders(origin) }
       )
+    }
+
+    const { error: deleteError } = await supabase
+      .from('calendar_events_cache')
+      .delete()
+      .eq('user_id', USER_ID)
+      .eq('provider', PROVIDER)
+      .lt('fetched_at', syncTimestamp)
+
+    if (deleteError) {
+      console.error('Calendar events cleanup failed:', deleteError)
     }
 
     return NextResponse.json(
