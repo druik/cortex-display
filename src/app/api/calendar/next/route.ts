@@ -1,13 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { USER_ID } from '@/lib/config'
+import { handleCors, optionsResponse, corsHeaders } from '@/lib/cors'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
 
-export async function GET() {
+export async function OPTIONS(request: NextRequest) {
+  return optionsResponse(request)
+}
+
+export async function GET(request: NextRequest) {
+  const corsError = handleCors(request)
+  if (corsError) return corsError
+
+  const origin = request.headers.get('origin')
+
   try {
     const { data, error } = await supabase
       .from('calendar_events_cache')
@@ -20,14 +30,20 @@ export async function GET() {
 
     if (error && error.code !== 'PGRST116') {
       console.error('Fetch next event failed:', error)
-      return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to fetch event' },
+        { status: 500, headers: corsHeaders(origin) }
+      )
     }
 
-    return NextResponse.json({
-      event: data || null,
-      fetched_at: new Date().toISOString()
-    })
+    return NextResponse.json(
+      { event: data || null, fetched_at: new Date().toISOString() },
+      { headers: corsHeaders(origin) }
+    )
   } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500, headers: corsHeaders(origin) }
+    )
   }
 }

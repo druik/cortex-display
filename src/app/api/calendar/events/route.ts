@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { USER_ID, isValidApiKey } from '@/lib/config'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { handleCors, optionsResponse, corsHeaders } from '@/lib/cors'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,21 +53,48 @@ function validateEvents(events: NormalizedEvent[]): string | null {
   return null
 }
 
+export async function OPTIONS(request: NextRequest) {
+  return optionsResponse(request)
+}
+
 export async function POST(request: NextRequest) {
+  const corsError = handleCors(request)
+  if (corsError) return corsError
+
+  const origin = request.headers.get('origin')
+  const ip = getClientIp(request)
+  const { allowed, remaining } = rateLimit(ip, 'calendar/events', 10)
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { ...corsHeaders(origin), 'X-RateLimit-Remaining': '0' } }
+    )
+  }
+
   try {
     if (!isValidApiKey(request.headers.get('x-api-key'))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401, headers: corsHeaders(origin) }
+      )
     }
 
     const body = await request.json()
     const events = normalizeEvents(body)
     if (!events) {
-      return NextResponse.json({ error: 'Events array required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Events array required' },
+        { status: 400, headers: corsHeaders(origin) }
+      )
     }
 
     const validationError = validateEvents(events)
     if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 })
+      return NextResponse.json(
+        { error: validationError },
+        { status: 400, headers: corsHeaders(origin) }
+      )
     }
 
     const { error: deleteError } = await supabase
@@ -76,11 +105,17 @@ export async function POST(request: NextRequest) {
 
     if (deleteError) {
       console.error('Calendar events delete failed:', deleteError)
-      return NextResponse.json({ error: 'Failed to sync events' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to sync events' },
+        { status: 500, headers: corsHeaders(origin) }
+      )
     }
 
     if (events.length === 0) {
-      return NextResponse.json({ synced: 0 })
+      return NextResponse.json(
+        { synced: 0 },
+        { headers: corsHeaders(origin) }
+      )
     }
 
     const rows = events.map((e) => ({
@@ -97,11 +132,20 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Calendar events insert failed:', insertError)
-      return NextResponse.json({ error: 'Failed to sync events' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to sync events' },
+        { status: 500, headers: corsHeaders(origin) }
+      )
     }
 
-    return NextResponse.json({ synced: events.length })
+    return NextResponse.json(
+      { synced: events.length },
+      { headers: { ...corsHeaders(origin), 'X-RateLimit-Remaining': String(remaining) } }
+    )
   } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Invalid request' },
+      { status: 400, headers: corsHeaders(origin) }
+    )
   }
 }

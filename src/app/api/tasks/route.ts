@@ -1,20 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidApiKey } from '@/lib/config'
+import { handleCors, optionsResponse, corsHeaders } from '@/lib/cors'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
 
+export async function OPTIONS(request: NextRequest) {
+  return optionsResponse(request)
+}
+
 export async function PATCH(request: NextRequest) {
+  const corsError = handleCors(request)
+  if (corsError) return corsError
+
   const origin = request.headers.get('origin')
   const referer = request.headers.get('referer')
   const isSameOrigin = origin?.includes('localhost') || referer?.includes('localhost')
 
   if (!isSameOrigin) {
     if (!isValidApiKey(request.headers.get('x-api-key'))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401, headers: corsHeaders(origin) }
+      )
     }
   }
 
@@ -22,7 +33,10 @@ export async function PATCH(request: NextRequest) {
     const { id, action } = await request.json()
 
     if (!id) {
-      return NextResponse.json({ error: 'Task ID required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Task ID required' },
+        { status: 400, headers: corsHeaders(origin) }
+      )
     }
 
     if (action === 'toggle_anchor') {
@@ -39,10 +53,16 @@ export async function PATCH(request: NextRequest) {
 
       if (error) {
         console.error('Toggle anchor failed:', error)
-        return NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
+        return NextResponse.json(
+          { error: 'Failed to update task' },
+          { status: 500, headers: corsHeaders(origin) }
+        )
       }
 
-      return NextResponse.json({ success: true, is_anchor: !task?.is_anchor })
+      return NextResponse.json(
+        { success: true, is_anchor: !task?.is_anchor },
+        { headers: corsHeaders(origin) }
+      )
     }
 
     if (action === 'undo') {
@@ -53,10 +73,16 @@ export async function PATCH(request: NextRequest) {
 
       if (error) {
         console.error('Undo task failed:', error)
-        return NextResponse.json({ error: 'Failed to undo task' }, { status: 500 })
+        return NextResponse.json(
+          { error: 'Failed to undo task' },
+          { status: 500, headers: corsHeaders(origin) }
+        )
       }
 
-      return NextResponse.json({ success: true })
+      return NextResponse.json(
+        { success: true },
+        { headers: corsHeaders(origin) }
+      )
     }
 
     // Default: complete task
@@ -67,11 +93,20 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       console.error('Complete task failed:', error)
-      return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to complete task' },
+        { status: 500, headers: corsHeaders(origin) }
+      )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(
+      { success: true },
+      { headers: corsHeaders(origin) }
+    )
   } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Invalid request' },
+      { status: 400, headers: corsHeaders(origin) }
+    )
   }
 }
