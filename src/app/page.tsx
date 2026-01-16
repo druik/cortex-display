@@ -68,6 +68,14 @@ function formatRelativeTime(eventDate: Date, now: Date): string {
   return mins > 0 ? `in ${hours}h ${mins}m` : `in ${hours}h`
 }
 
+function isFlexEvent(title: string): boolean {
+  return title.toLowerCase().startsWith('[flex]')
+}
+
+function stripFlexPrefix(title: string): string {
+  return title.replace(/^\[flex\]\s*/i, '')
+}
+
 export default function CortexDisplay() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [capacity, setCapacity] = useState<CapacityState>('moderate')
@@ -80,6 +88,7 @@ export default function CortexDisplay() {
   const [toastExiting, setToastExiting] = useState(false)
   const [completedToday, setCompletedToday] = useState<CompletedTask[]>([])
   const [completedExpanded, setCompletedExpanded] = useState(false)
+  const [showFlexEvents, setShowFlexEvents] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
 
@@ -109,6 +118,7 @@ export default function CortexDisplay() {
     const eventRes = await fetch('/api/calendar/next')
     const eventData = await eventRes.json()
     setNextEvent(eventData.event || null)
+    setShowFlexEvents(false)
 
     const todayPacific = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
     const { data: completedData } = await supabase
@@ -243,18 +253,38 @@ export default function CortexDisplay() {
       <p className="text-[2vw] text-white/30 mb-16">{formatCapacity(capacity)}</p>
 
       {/* Next Calendar Event */}
-      {nextEvent && (
-        <div className="mb-16 pl-6 border-l-2 border-sky-500/40">
-          <p className="text-[2.5vw] text-sky-100/80">
-            {formatEventTime(new Date(nextEvent.start_at))}
-            <span className="text-white/50 mx-3">·</span>
-            {nextEvent.title}
-          </p>
-          <p className="text-[1.8vw] text-sky-400/60 mt-2 font-medium">
-            {formatRelativeTime(new Date(nextEvent.start_at), currentTime)}
-          </p>
-        </div>
-      )}
+      {nextEvent && (() => {
+        const isFlex = isFlexEvent(nextEvent.title)
+        const isLowCapacity = capacity === 'low' || capacity === 'rest'
+        const shouldHide = isFlex && isLowCapacity && !showFlexEvents
+
+        if (shouldHide) {
+          return (
+            <button
+              onClick={() => setShowFlexEvents(true)}
+              className="mb-16 text-[1.8vw] text-white/20 hover:text-white/40 transition-colors select-none"
+            >
+              1 hidden ▶
+            </button>
+          )
+        }
+
+        const displayTitle = isFlex ? stripFlexPrefix(nextEvent.title) : nextEvent.title
+        const dimmed = isFlex && isLowCapacity && showFlexEvents
+
+        return (
+          <div className={`mb-16 pl-6 border-l-2 ${dimmed ? 'border-sky-500/20' : 'border-sky-500/40'}`}>
+            <p className={`text-[2.5vw] ${dimmed ? 'text-sky-100/40' : 'text-sky-100/80'}`}>
+              {formatEventTime(new Date(nextEvent.start_at))}
+              <span className="text-white/50 mx-3">·</span>
+              {displayTitle}
+            </p>
+            <p className={`text-[1.8vw] mt-2 font-medium ${dimmed ? 'text-sky-400/30' : 'text-sky-400/60'}`}>
+              {formatRelativeTime(new Date(nextEvent.start_at), currentTime)}
+            </p>
+          </div>
+        )
+      })()}
 
       {/* Anchored Tasks */}
       {anchors.length > 0 && (
