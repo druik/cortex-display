@@ -276,17 +276,17 @@ export default function CortexDisplay() {
 
       {/* Undo Toast */}
       {undoTask && (
-        <div className={`fixed bottom-32 left-1/2 bg-white/10 backdrop-blur-md rounded-3xl overflow-hidden ${toastExiting ? 'toast-exit' : 'toast-enter'}`}>
-          <div className="px-16 py-8 flex items-center gap-12">
-            <span className="text-[4vw] text-white/70">{undoTask.title}</span>
+        <div className={`fixed bottom-20 left-1/2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden ${toastExiting ? 'toast-exit' : 'toast-enter'}`}>
+          <div className="px-10 py-5 flex items-center gap-8">
+            <span className="text-[2.5vw] text-white/70">{undoTask.title}</span>
             <button
               onClick={undoComplete}
-              className="text-[4vw] text-white/50 font-medium hover:text-white transition-colors px-8 py-4 -my-4 -mr-8 min-h-[80px] min-w-[120px]"
+              className="text-[2.5vw] text-white/50 font-medium hover:text-white transition-colors px-6 py-3 -my-3 -mr-6 min-h-[60px]"
             >
               Undo
             </button>
           </div>
-          <div key={undoTask.id} className="h-2 bg-white/20 toast-progress" />
+          <div key={undoTask.id} className="h-1.5 bg-white/20 toast-progress" />
         </div>
       )}
 
