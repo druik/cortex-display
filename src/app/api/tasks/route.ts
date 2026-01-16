@@ -7,9 +7,20 @@ const supabase = createClient(
 )
 
 export async function PATCH(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+  const isSameOrigin = origin?.includes('localhost') || referer?.includes('localhost')
+
+  if (!isSameOrigin) {
+    const apiKey = request.headers.get('x-api-key')
+    if (apiKey !== process.env.CORTEX_API_KEY) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
   try {
     const { id, action } = await request.json()
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Task ID required' }, { status: 400 })
     }

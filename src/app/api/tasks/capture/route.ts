@@ -1,12 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { USER_ID } from '@/lib/config'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
-
-const USER_ID = '195145f9-d059-4a71-8722-fa61ecc911f3'
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()

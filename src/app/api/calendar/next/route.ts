@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { USER_ID } from '@/lib/config'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('calendar_events_cache')
       .select('title, start_at, provider')
+      .eq('user_id', USER_ID)
       .gt('start_at', new Date().toISOString())
       .order('start_at', { ascending: true })
       .limit(1)
