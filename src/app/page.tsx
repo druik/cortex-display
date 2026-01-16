@@ -12,6 +12,11 @@ interface Task {
   is_anchor: boolean
 }
 
+interface CompletedTask {
+  id: string
+  title: string
+}
+
 interface CalendarEvent {
   title: string
   start_at: string
@@ -73,6 +78,8 @@ export default function CortexDisplay() {
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [toastExiting, setToastExiting] = useState(false)
+  const [completedToday, setCompletedToday] = useState<CompletedTask[]>([])
+  const [completedExpanded, setCompletedExpanded] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
 
@@ -103,6 +110,19 @@ export default function CortexDisplay() {
     const eventData = await eventRes.json()
     setNextEvent(eventData.event || null)
 
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const { data: completedData } = await supabase
+      .from('tasks')
+      .select('id, title')
+      .eq('completed', true)
+      .gte('completed_at', todayStart.toISOString())
+      .order('completed_at', { ascending: false })
+
+    if (completedData) {
+      setCompletedToday(completedData)
+    }
+
     setLoading(false)
   }
 
@@ -121,6 +141,7 @@ export default function CortexDisplay() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: task.id }),
       })
+      setCompletedToday(prev => [{ id: task.id, title: task.title }, ...prev])
       setToastExiting(true)
       setTimeout(() => {
         setUndoTask(null)
@@ -141,6 +162,8 @@ export default function CortexDisplay() {
       if (!b.due_date) return -1
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
     }))
+
+    setCompletedToday(prev => prev.filter(t => t.id !== undoTask.id))
 
     await fetch('/api/tasks', {
       method: 'PATCH',
@@ -272,6 +295,30 @@ export default function CortexDisplay() {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Completed Today */}
+      {completedToday.length > 0 && (
+        <div className="mt-20">
+          <button
+            onClick={() => setCompletedExpanded(!completedExpanded)}
+            className="text-[1.8vw] text-white/25 hover:text-white/40 transition-colors select-none"
+          >
+            {completedToday.length} completed {completedExpanded ? '▼' : '▶'}
+          </button>
+          {completedExpanded && (
+            <ul className="mt-4 space-y-3">
+              {completedToday.map((task) => (
+                <li
+                  key={task.id}
+                  className="text-[1.8vw] text-white/20 line-through"
+                >
+                  {task.title}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* Undo Toast */}
