@@ -25,19 +25,18 @@ export async function GET(request: NextRequest) {
       .eq('user_id', USER_ID)
       .gt('start_at', new Date().toISOString())
       .order('start_at', { ascending: true })
-      .limit(1)
-      .single()
+      .limit(5)
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Fetch next event failed:', error)
+    if (error) {
+      console.error('Fetch events failed:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch event' },
+        { error: 'Failed to fetch events' },
         { status: 500, headers: corsHeaders(origin) }
       )
     }
 
     return NextResponse.json(
-      { event: data || null, fetched_at: new Date().toISOString() },
+      { events: data || [], fetched_at: new Date().toISOString() },
       { headers: corsHeaders(origin) }
     )
   } catch {

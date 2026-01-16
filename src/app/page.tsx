@@ -80,7 +80,7 @@ export default function CortexDisplay() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [capacity, setCapacity] = useState<CapacityState>('moderate')
   const [tasks, setTasks] = useState<Task[]>([])
-  const [nextEvent, setNextEvent] = useState<CalendarEvent | null>(null)
+  const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [undoTask, setUndoTask] = useState<Task | null>(null)
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -117,7 +117,7 @@ export default function CortexDisplay() {
 
     const eventRes = await fetch('/api/calendar/next')
     const eventData = await eventRes.json()
-    setNextEvent(eventData.event || null)
+    setEvents(eventData.events || [])
     setShowFlexEvents(false)
 
     const todayPacific = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
@@ -252,36 +252,47 @@ export default function CortexDisplay() {
       </p>
       <p className="text-[2vw] text-white/30 mb-16">{formatCapacity(capacity)}</p>
 
-      {/* Next Calendar Event */}
-      {nextEvent && (() => {
-        const isFlex = isFlexEvent(nextEvent.title)
+      {/* Calendar Events */}
+      {events.length > 0 && (() => {
         const isLowCapacity = capacity === 'low' || capacity === 'rest'
-        const shouldHide = isFlex && isLowCapacity && !showFlexEvents
-
-        if (shouldHide) {
-          return (
-            <button
-              onClick={() => setShowFlexEvents(true)}
-              className="mb-16 text-[1.8vw] text-white/20 hover:text-white/40 transition-colors select-none"
-            >
-              1 hidden ▶
-            </button>
-          )
-        }
-
-        const displayTitle = isFlex ? stripFlexPrefix(nextEvent.title) : nextEvent.title
-        const dimmed = isFlex && isLowCapacity && showFlexEvents
+        const visibleEvents = isLowCapacity && !showFlexEvents
+          ? events.filter(e => !isFlexEvent(e.title))
+          : events
+        const hiddenCount = events.length - visibleEvents.length
 
         return (
-          <div className={`mb-16 pl-6 border-l-2 ${dimmed ? 'border-sky-500/20' : 'border-sky-500/40'}`}>
-            <p className={`text-[2.5vw] ${dimmed ? 'text-sky-100/40' : 'text-sky-100/80'}`}>
-              {formatEventTime(new Date(nextEvent.start_at))}
-              <span className="text-white/50 mx-3">·</span>
-              {displayTitle}
-            </p>
-            <p className={`text-[1.8vw] mt-2 font-medium ${dimmed ? 'text-sky-400/30' : 'text-sky-400/60'}`}>
-              {formatRelativeTime(new Date(nextEvent.start_at), currentTime)}
-            </p>
+          <div className="mb-16 space-y-6">
+            {visibleEvents.map((event, index) => {
+              const isFlex = isFlexEvent(event.title)
+              const displayTitle = isFlex ? stripFlexPrefix(event.title) : event.title
+              const dimmed = isFlex && isLowCapacity && showFlexEvents
+
+              return (
+                <div
+                  key={`${event.start_at}-${index}`}
+                  className={`pl-6 border-l-2 ${dimmed ? 'border-sky-500/20' : 'border-sky-500/40'}`}
+                >
+                  <p className={`text-[2.5vw] ${dimmed ? 'text-sky-100/40' : 'text-sky-100/80'}`}>
+                    {formatEventTime(new Date(event.start_at))}
+                    <span className="text-white/50 mx-3">·</span>
+                    {displayTitle}
+                  </p>
+                  {index === 0 && (
+                    <p className={`text-[1.8vw] mt-2 font-medium ${dimmed ? 'text-sky-400/30' : 'text-sky-400/60'}`}>
+                      {formatRelativeTime(new Date(event.start_at), currentTime)}
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setShowFlexEvents(true)}
+                className="text-[1.8vw] text-white/20 hover:text-white/40 transition-colors select-none"
+              >
+                {hiddenCount} hidden ▶
+              </button>
+            )}
           </div>
         )
       })()}
