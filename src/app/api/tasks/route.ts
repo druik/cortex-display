@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { isValidApiKey } from '@/lib/config'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,8 +13,7 @@ export async function PATCH(request: NextRequest) {
   const isSameOrigin = origin?.includes('localhost') || referer?.includes('localhost')
 
   if (!isSameOrigin) {
-    const apiKey = request.headers.get('x-api-key')
-    if (apiKey !== process.env.CORTEX_API_KEY) {
+    if (!isValidApiKey(request.headers.get('x-api-key'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
   }
@@ -38,7 +38,8 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('Toggle anchor failed:', error)
+        return NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
       }
 
       return NextResponse.json({ success: true, is_anchor: !task?.is_anchor })
@@ -51,7 +52,8 @@ export async function PATCH(request: NextRequest) {
         .eq('id', id)
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('Undo task failed:', error)
+        return NextResponse.json({ error: 'Failed to undo task' }, { status: 500 })
       }
 
       return NextResponse.json({ success: true })
@@ -64,7 +66,8 @@ export async function PATCH(request: NextRequest) {
       .eq('id', id)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('Complete task failed:', error)
+      return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

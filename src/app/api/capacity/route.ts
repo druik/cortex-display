@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
       .eq('id', 1)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('Capacity update failed:', error)
+      return NextResponse.json({ error: 'Failed to update capacity' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, state })
