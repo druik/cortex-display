@@ -152,7 +152,10 @@ export async function POST(request: NextRequest) {
 
     const { error: insertError } = await supabase
       .from('calendar_events_cache')
-      .insert(rows)
+      .upsert(rows, { 
+        onConflict: 'user_id,title,start_at',
+        ignoreDuplicates: true 
+      })
 
     if (insertError) {
       console.error('Calendar events insert failed:', insertError)
