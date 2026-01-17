@@ -260,28 +260,53 @@ export default function CortexDisplay() {
           : events
         const hiddenCount = events.length - visibleEvents.length
 
+        const todayStr = currentTime.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
+
+        function formatEventDate(date: Date): string {
+          return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+            timeZone: 'America/Los_Angeles',
+          })
+        }
+
+        function getDateKey(dateStr: string): string {
+          return new Date(dateStr).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
+        }
+
+        let lastDateKey = ''
+
         return (
           <div className="mb-16 space-y-6">
             {visibleEvents.map((event, index) => {
               const isFlex = isFlexEvent(event.title)
               const displayTitle = isFlex ? stripFlexPrefix(event.title) : event.title
               const dimmed = isFlex && isLowCapacity && showFlexEvents
+              
+              const eventDateKey = getDateKey(event.start_at)
+              const showDateHeader = eventDateKey !== todayStr && eventDateKey !== lastDateKey
+              lastDateKey = eventDateKey
 
               return (
-                <div
-                  key={`${event.start_at}-${index}`}
-                  className={`pl-6 border-l-2 ${dimmed ? 'border-sky-500/20' : 'border-sky-500/40'}`}
-                >
-                  <p className={`text-[2.5vw] ${dimmed ? 'text-sky-100/40' : 'text-sky-100/80'}`}>
-                    {formatEventTime(new Date(event.start_at))}
-                    <span className="text-white/50 mx-3">·</span>
-                    {displayTitle}
-                  </p>
-                  {index === 0 && (
-                    <p className={`text-[1.8vw] mt-2 font-medium ${dimmed ? 'text-sky-400/30' : 'text-sky-400/60'}`}>
-                      {formatRelativeTime(new Date(event.start_at), currentTime)}
+                <div key={`${event.start_at}-${index}`}>
+                  {showDateHeader && (
+                    <p className="text-[1.6vw] text-white/30 mb-4 mt-8">
+                      {formatEventDate(new Date(event.start_at))}
                     </p>
                   )}
+                  <div className={`pl-6 border-l-2 ${dimmed ? 'border-sky-500/20' : 'border-sky-500/40'}`}>
+                    <p className={`text-[2.5vw] ${dimmed ? 'text-sky-100/40' : 'text-sky-100/80'}`}>
+                      {formatEventTime(new Date(event.start_at))}
+                      <span className="text-white/50 mx-3">·</span>
+                      {displayTitle}
+                    </p>
+                    {index === 0 && eventDateKey === todayStr && (
+                      <p className={`text-[1.8vw] mt-2 font-medium ${dimmed ? 'text-sky-400/30' : 'text-sky-400/60'}`}>
+                        {formatRelativeTime(new Date(event.start_at), currentTime)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )
             })}
