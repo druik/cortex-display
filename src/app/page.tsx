@@ -108,7 +108,7 @@ export default function CortexDisplay() {
       .from('tasks')
       .select('id, title, due_date, is_anchor')
       .eq('completed', false)
-      .lte('approved_date', today)
+      .eq('approved_date', today)
       .order('due_date', { ascending: true, nullsFirst: false })
 
     if (tasksData) {
