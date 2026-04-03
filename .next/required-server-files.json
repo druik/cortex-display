@@ -141,7 +141,7 @@
     }
   },
   "appDir": "/Users/Kim/Projects/cortex-display",
-  "relativeAppDir": "Projects/cortex-display",
+  "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",

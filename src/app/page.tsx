@@ -10,6 +10,8 @@ interface Task {
   title: string
   due_date: string | null
   is_anchor: boolean
+  approved_at: string | null
+  created_at: string
 }
 
 interface CompletedTask {
@@ -24,10 +26,10 @@ interface CalendarEvent {
 }
 
 const TASK_LIMITS: Record<CapacityState, number> = {
-  low: 3,
-  moderate: 5,
-  high: 7,
-  rest: 1,
+  rest: 0,
+  low: 1,
+  moderate: 2,
+  high: 3,
 }
 
 function formatTime(date: Date): string {
@@ -106,10 +108,10 @@ export default function CortexDisplay() {
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
     const { data: tasksData } = await supabase
       .from('tasks')
-      .select('id, title, due_date, is_anchor')
+      .select('id, title, due_date, is_anchor, approved_at, created_at')
       .eq('completed', false)
       .eq('approved_date', today)
-      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('approved_at', { ascending: true, nullsFirst: false })
 
     if (tasksData) {
       setTasks(tasksData)
@@ -230,7 +232,9 @@ export default function CortexDisplay() {
     }
   }, [])
 
-  const anchors = tasks.filter(t => t.is_anchor)
+  const anchors = tasks.filter(t => t.is_anchor).sort((a, b) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
   const regularTasks = tasks.filter(t => !t.is_anchor)
   const visibleTasks = regularTasks.slice(0, TASK_LIMITS[capacity])
 
