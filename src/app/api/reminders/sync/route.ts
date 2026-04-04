@@ -35,15 +35,21 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const rawBody = await request.text()
+  console.log('[reminders/sync] raw body:', rawBody)
+
   let body
   try {
-    body = await request.json()
+    body = JSON.parse(rawBody)
   } catch {
+    console.log('[reminders/sync] JSON parse failed')
     return NextResponse.json(
       { error: 'Invalid JSON' },
       { status: 400, headers: corsHeaders(origin) }
     )
   }
+
+  console.log('[reminders/sync] parsed body keys:', Object.keys(body), 'reminders type:', typeof body.reminders)
 
   const { list } = body
   let reminders = body.reminders
