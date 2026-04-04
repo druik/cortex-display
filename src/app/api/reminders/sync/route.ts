@@ -51,7 +51,10 @@ export async function POST(request: NextRequest) {
 
   console.log('[reminders/sync] parsed body keys:', Object.keys(body), 'reminders type:', typeof body.reminders)
 
-  const { list } = body
+  const rawList = body.list
+  const list = typeof rawList === 'string'
+    ? rawList
+    : (rawList && typeof rawList === 'object' ? Object.values(rawList)[0] : null)
   let reminders = body.reminders
 
   if (typeof reminders === 'string') {
