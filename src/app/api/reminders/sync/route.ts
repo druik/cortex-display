@@ -45,9 +45,25 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { list, reminders } = body
+  const { list } = body
+  let reminders = body.reminders
 
-  if (!reminders || !Array.isArray(reminders) || reminders.length === 0) {
+  if (typeof reminders === 'string') {
+    try {
+      reminders = JSON.parse(reminders)
+    } catch {
+      return NextResponse.json(
+        { error: 'reminders string is not valid JSON' },
+        { status: 400, headers: corsHeaders(origin) }
+      )
+    }
+  }
+
+  if (!Array.isArray(reminders)) {
+    reminders = reminders ? [reminders] : []
+  }
+
+  if (reminders.length === 0) {
     return NextResponse.json(
       { error: 'reminders array is required and must not be empty' },
       { status: 400, headers: corsHeaders(origin) }
