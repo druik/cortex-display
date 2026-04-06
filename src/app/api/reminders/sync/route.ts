@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
   const syncTimestamp = new Date().toISOString()
   const listName = list || 'Cortex'
-
+  console.log('[reminders/sync] reminders sample:', JSON.stringify(reminders[0]))
   const rows = reminders
     .filter((r: { title?: string; external_id?: string }) => r.title && r.external_id)
     .map((r: {
