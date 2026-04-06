@@ -130,6 +130,23 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const taskRows = rows.map((r: { external_id: string; title: string }) => ({
+    user_id: USER_ID,
+    external_id: r.external_id,
+    title: r.title,
+    approved_date: null,
+    completed: false,
+    is_anchor: false,
+  }))
+
+  const { error: taskError } = await supabase
+    .from('tasks')
+    .upsert(taskRows, { onConflict: 'external_id,user_id', ignoreDuplicates: true })
+
+  if (taskError) {
+    console.error('Task auto-promote failed:', taskError)
+  }
+
   const { error: cleanupError } = await supabase
     .from('reminders')
     .delete()
@@ -142,7 +159,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(
-    { success: true, synced: rows.length },
+    { success: true, synced: rows.length, promoted: taskError ? 0 : taskRows.length },
     { headers: { ...corsHeaders(origin), 'X-RateLimit-Remaining': String(remaining) } }
   )
 }
