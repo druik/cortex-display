@@ -55,9 +55,14 @@ export async function POST(request: NextRequest) {
   const list = typeof rawList === 'string'
     ? rawList
     : (rawList && typeof rawList === 'object' ? Object.values(rawList)[0] : null)
-  let reminders = body.reminders
+ let reminders = body.reminders
 
- if (typeof reminders === 'string') {
+  // Flatten nested arrays (Shortcuts wraps list-of-dicts in extra array)
+  if (Array.isArray(reminders) && reminders.length > 0 && Array.isArray(reminders[0])) {
+    reminders = reminders[0]
+  }
+
+  if (typeof reminders === 'string') {
     try {
       reminders = JSON.parse(reminders)
     } catch {
