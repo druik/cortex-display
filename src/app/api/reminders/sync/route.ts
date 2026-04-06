@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
     try {
       reminders = JSON.parse(reminders)
     } catch {
-      return NextResponse.json(
-        { error: 'reminders string is not valid JSON', raw: reminders },
-        { status: 400, headers: corsHeaders(origin) }
-      )
+      // Shortcuts sends list as newline-separated string
+      reminders = reminders.split('\n').filter(Boolean).map((title: string) => ({
+        external_id: title.trim(),
+        title: title.trim(),
+      }))
     }
   }
 
