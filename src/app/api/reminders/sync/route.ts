@@ -57,12 +57,12 @@ export async function POST(request: NextRequest) {
     : (rawList && typeof rawList === 'object' ? Object.values(rawList)[0] : null)
   let reminders = body.reminders
 
-  if (typeof reminders === 'string') {
+ if (typeof reminders === 'string') {
     try {
       reminders = JSON.parse(reminders)
     } catch {
       return NextResponse.json(
-        { error: 'reminders string is not valid JSON' },
+        { error: 'reminders string is not valid JSON', raw: reminders },
         { status: 400, headers: corsHeaders(origin) }
       )
     }
