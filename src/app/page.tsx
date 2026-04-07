@@ -25,13 +25,6 @@ interface CalendarEvent {
   provider: string
 }
 
-const TASK_LIMITS: Record<CapacityState, number> = {
-  rest: 0,
-  low: 1,
-  moderate: 2,
-  high: 3,
-}
-
 function formatTime(date: Date): string {
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -236,7 +229,6 @@ export default function CortexDisplay() {
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   )
   const regularTasks = tasks.filter(t => !t.is_anchor)
-  const visibleTasks = regularTasks.slice(0, TASK_LIMITS[capacity])
 
   if (loading) {
     return (
@@ -347,9 +339,9 @@ export default function CortexDisplay() {
       )}
 
       {/* Regular Tasks */}
-      {visibleTasks.length > 0 && (
+      {regularTasks.length > 0 && (
         <ul className="space-y-6">
-          {visibleTasks.map((task) => (
+          {regularTasks.map((task) => (
             <li
               key={task.id}
               onClick={() => completeTask(task)}
